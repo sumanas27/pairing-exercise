@@ -1,36 +1,26 @@
-package io.billie.functional
+package io.billie.organisations.resource
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.billie.functional.data.Fixtures.bbcContactFixture
-import io.billie.functional.data.Fixtures.bbcFixture
-import io.billie.functional.data.Fixtures.orgRequestJson
-import io.billie.functional.data.Fixtures.orgRequestJsonCountryCodeBlank
-import io.billie.functional.data.Fixtures.orgRequestJsonCountryCodeIncorrect
-import io.billie.functional.data.Fixtures.orgRequestJsonNoName
-import io.billie.functional.data.Fixtures.orgRequestJsonNameBlank
-import io.billie.functional.data.Fixtures.orgRequestJsonNoContactDetails
-import io.billie.functional.data.Fixtures.orgRequestJsonNoCountryCode
-import io.billie.functional.data.Fixtures.orgRequestJsonNoLegalEntityType
+import io.billie.util.data.Fixtures
 import io.billie.organisations.viewmodel.Entity
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.core.IsEqual.equalTo
+import org.hamcrest.MatcherAssert
+import org.hamcrest.core.IsEqual
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.DEFINED_PORT
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.web.server.LocalServerPort
-import org.springframework.http.MediaType.APPLICATION_JSON
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.util.*
-
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import java.util.UUID
 
 @AutoConfigureMockMvc
-@SpringBootTest(webEnvironment = DEFINED_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT)
 class CanStoreAndReadOrganisationTest {
 
     @LocalServerPort
@@ -48,89 +38,89 @@ class CanStoreAndReadOrganisationTest {
     @Test
     fun orgs() {
         mockMvc.perform(
-            get("/organisations")
-                .contentType(APPLICATION_JSON)
+            MockMvcRequestBuilders.get("/organisations")
+                .contentType(MediaType.APPLICATION_JSON)
         )
-            .andExpect(status().isOk())
+            .andExpect(MockMvcResultMatchers.status().isOk())
     }
 
     @Test
     fun cannotStoreOrgWhenNameIsBlank() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonNameBlank())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonNameBlank())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun cannotStoreOrgWhenNameIsMissing() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonNoName())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonNoName())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun cannotStoreOrgWhenCountryCodeIsMissing() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonNoCountryCode())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonNoCountryCode())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun cannotStoreOrgWhenCountryCodeIsBlank() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonCountryCodeBlank())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonCountryCodeBlank())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun cannotStoreOrgWhenCountryCodeIsNotRecognised() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonCountryCodeIncorrect())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonCountryCodeIncorrect())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun cannotStoreOrgWhenNoLegalEntityType() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonNoLegalEntityType())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonNoLegalEntityType())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun cannotStoreOrgWhenNoContactDetails() {
         mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJsonNoContactDetails())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJsonNoContactDetails())
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
     @Test
     fun canStoreOrg() {
         val result = mockMvc.perform(
-            post("/organisations").contentType(APPLICATION_JSON).content(orgRequestJson())
+            MockMvcRequestBuilders.post("/organisations").contentType(MediaType.APPLICATION_JSON).content(Fixtures.orgRequestJson())
         )
-        .andExpect(status().isOk)
+        .andExpect(MockMvcResultMatchers.status().isOk)
         .andReturn()
 
         val response = mapper.readValue(result.response.contentAsString, Entity::class.java)
 
         val org: Map<String, Any> = orgFromDatabase(response.id)
-        assertDataMatches(org, bbcFixture(response.id))
+        assertDataMatches(org, Fixtures.bbcFixture(response.id))
 
         val contactDetailsId: UUID = UUID.fromString(org["contact_details_id"] as String)
         val contactDetails: Map<String, Any> = contactDetailsFromDatabase(contactDetailsId)
-        assertDataMatches(contactDetails, bbcContactFixture(contactDetailsId))
+        assertDataMatches(contactDetails, Fixtures.bbcContactFixture(contactDetailsId))
     }
 
     fun assertDataMatches(reply: Map<String, Any>, assertions: Map<String, Any>) {
         for (key in assertions.keys) {
-            assertThat(reply[key], equalTo(assertions[key]))
+            MatcherAssert.assertThat(reply[key], IsEqual.equalTo(assertions[key]))
         }
     }
 
